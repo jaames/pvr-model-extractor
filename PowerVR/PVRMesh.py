@@ -1,4 +1,4 @@
-from EPOD import *
+from PowerVR.EPOD import *
 
 class EPVRMesh:
   eTriangleList          = 0

@@ -1,4 +1,4 @@
-from EPOD import *
+from PowerVR.EPOD import *
 import numpy as np
 
 class PVRModel:

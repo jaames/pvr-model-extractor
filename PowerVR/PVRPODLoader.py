@@ -1,14 +1,14 @@
 import struct
 import numpy as np
 
-from EPOD import *
-from PVRModel import PVRModel
-from PVRMesh import PVRMesh, EPVRMesh
-from PVRMaterial import PVRMaterial, EPVRMaterial
-from PVRLight import PVRLight, EPVRLight
-from PVRTexture import PVRTexture
-from PVRCamera import PVRCamera
-from PVRNode import PVRNode
+from PowerVR.EPOD import *
+from PowerVR.PVRModel import PVRModel
+from PowerVR.PVRMesh import PVRMesh, EPVRMesh
+from PowerVR.PVRMaterial import PVRMaterial, EPVRMaterial
+from PowerVR.PVRLight import PVRLight, EPVRLight
+from PowerVR.PVRTexture import PVRTexture
+from PowerVR.PVRCamera import PVRCamera
+from PowerVR.PVRNode import PVRNode
 
 # https://github.com/powervr-graphics/WebGL_SDK/blob/4.0/Tools/PVRPODLoader.js
 
@@ -57,17 +57,19 @@ PVRVertexDataTypeMap = {
 class PVRPODLoader:
   def __init__(self, stream):
     self.stream = stream
+    self.scene = None
+    self.versionString = None
     self.Read()
   
   def Read(self):
     for (ident, length) in self.ReadTags():
       # Read version block
       if ident == EPODIdentifiers.eFormatVersion | EPODDefines.startTagMask:
-        versionString = self.stream.read(length).decode("utf-8")
+        self.versionString = self.ReadString(length)
       
       # Read scene block
       elif ident == EPODIdentifiers.eScene | EPODDefines.startTagMask:
-        return self.ReadSceneBlock()
+        self.scene = self.ReadSceneBlock()
       
       # Skip unimplemented block types
       else:
@@ -91,7 +93,7 @@ class PVRPODLoader:
 
       if ident == EPODIdentifiers.eScene | EPODDefines.endTagMask:
         # do final checks, break tag loop
-        break
+        return model
 
       elif ident == EPODIdentifiers.eSceneClearColour | EPODDefines.startTagMask:
         model.clearColour = np.frombuffer(self.stream.read(12), dtype=np.float32)
@@ -136,31 +138,27 @@ class PVRPODLoader:
         model.units = struct.unpack("<i", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eSceneCamera | EPODDefines.startTagMask:
-        print("camera")
+        print("camera not implemented")
         self.stream.read(length)
 
       elif ident == EPODIdentifiers.eSceneLight | EPODDefines.startTagMask:
-        print("light")
+        print("light not implemented")
         self.stream.read(length)
 
       elif ident == EPODIdentifiers.eSceneMesh | EPODDefines.startTagMask:
         mesh = self.ReadMeshBlock()
-        print("mesh")
         model.meshes.append(mesh)
 
       elif ident == EPODIdentifiers.eSceneNode | EPODDefines.startTagMask:
         node = self.ReadNodeBlock()
-        print("node", node.name)
         model.nodes.append(node)
 
       elif ident == EPODIdentifiers.eSceneTexture | EPODDefines.startTagMask:
         texture = self.ReadTextureBlock()
-        print("texture", texture.name)
         model.textures.append(texture)
 
       elif ident == EPODIdentifiers.eSceneMaterial | EPODDefines.startTagMask:
         material = self.ReadMaterialBlock()
-        print("material", material.name)
         model.materials.append(material)
 
       # Skip unimplemented block types
@@ -181,7 +179,7 @@ class PVRPODLoader:
         node.index = struct.unpack("<i", self.stream.read(4))[0]
       
       elif ident == EPODIdentifiers.eNodeName | EPODDefines.startTagMask:
-        node.name = self.stream.read(length).decode("utf-8")
+        node.name = self.ReadString(length)
       
       elif ident == EPODIdentifiers.eNodeMaterialIndex | EPODDefines.startTagMask:
         node.materialIndex = struct.unpack("<i", self.stream.read(4))[0]
@@ -330,7 +328,7 @@ class PVRPODLoader:
         return texture
 
       elif ident == EPODIdentifiers.eTextureFilename | EPODDefines.startTagMask:
-        texture.name = self.stream.read(length).decode("utf-8")
+        texture.name = self.ReadString(length)
         
       # skip unkown blocks
       else:
@@ -345,7 +343,7 @@ class PVRPODLoader:
         return material
 
       elif ident == EPODIdentifiers.eMaterialName | EPODDefines.startTagMask:
-        material.name = self.stream.read(length).decode("utf-8")
+        material.name = self.ReadString(length)
 
       elif ident == EPODIdentifiers.eMaterialDiffuseTextureIndex | EPODDefines.startTagMask:
         material.diffuseTextureIndex = struct.unpack("<i", self.stream.read(4))[0]
@@ -366,10 +364,10 @@ class PVRPODLoader:
         material.specular = struct.unpack("<f", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eMaterialEffectFile | EPODDefines.startTagMask:
-        material.effectFile = self.stream.read(length).decode("utf-8")
+        material.effectFile = self.ReadString(length)
 
       elif ident == EPODIdentifiers.eMaterialEffectName | EPODDefines.startTagMask:
-        material.effectName = self.stream.read(length).decode("utf-8")
+        material.effectName = self.ReadString(length)
 
       elif ident == EPODIdentifiers.eMaterialAmbientTextureIndex | EPODDefines.startTagMask:
         material.ambientTextureIndex = struct.unpack("<i", self.stream.read(4))[0]
@@ -432,6 +430,9 @@ class PVRPODLoader:
       else:
         self.stream.seek(length, 1)
 
+  def ReadString(self, length):
+    return self.stream.read(length).decode("utf-8").strip("\x00")
+
   def ReadVertexIndexData(self):
     data = None
     dataType = EPVRMesh.FaceData.e16Bit
@@ -489,6 +490,3 @@ class PVRPODLoader:
 
       else: 
         self.stream.seek(length, 1)
-
-with open("./test.pod", "rb") as f:
-  model = PVRPODLoader(f)

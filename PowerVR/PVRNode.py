@@ -1,4 +1,4 @@
-from PVRAnimation import EPVRAnimation, PVRAnimation
+from PowerVR.PVRAnimation import EPVRAnimation, PVRAnimation
 
 class PVRNode:
   def __init__(self):
