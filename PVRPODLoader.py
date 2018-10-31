@@ -145,11 +145,13 @@ class PVRPODLoader:
 
       elif ident == EPODIdentifiers.eSceneMesh | EPODDefines.startTagMask:
         mesh = self.ReadMeshBlock()
+        print("mesh")
         model.meshes.append(mesh)
 
       elif ident == EPODIdentifiers.eSceneNode | EPODDefines.startTagMask:
-        print("node")
-        self.stream.read(length)
+        node = self.ReadNodeBlock()
+        print("node", node.name)
+        model.nodes.append(node)
 
       elif ident == EPODIdentifiers.eSceneTexture | EPODDefines.startTagMask:
         texture = self.ReadTextureBlock()
@@ -162,6 +164,78 @@ class PVRPODLoader:
         model.materials.append(material)
 
       # Skip unimplemented block types
+      else:
+        self.stream.seek(length, 1)
+
+  def ReadNodeBlock(self):
+    node = PVRNode()
+    animation = node.animation
+    isOldFormat = False
+
+    for (ident, length) in self.ReadTags():
+      if ident == EPODIdentifiers.eSceneNode | EPODDefines.endTagMask:
+        # do final checks
+        return node
+
+      elif ident == EPODIdentifiers.eNodeIndex | EPODDefines.startTagMask:
+        node.index = struct.unpack("<i", self.stream.read(4))[0]
+      
+      elif ident == EPODIdentifiers.eNodeName | EPODDefines.startTagMask:
+        node.name = self.stream.read(length).decode("utf-8")
+      
+      elif ident == EPODIdentifiers.eNodeMaterialIndex | EPODDefines.startTagMask:
+        node.materialIndex = struct.unpack("<i", self.stream.read(4))[0]
+      
+      elif ident == EPODIdentifiers.eNodeParentIndex | EPODDefines.startTagMask:
+        node.parentIndex = struct.unpack("<i", self.stream.read(4))[0]
+      
+      elif ident == EPODIdentifiers.eNodePosition | EPODDefines.startTagMask: # Deprecated
+        pos = np.frombuffer(self.stream.read(length), dtype=np.float32)
+        isOldFormat = True;
+      
+      elif ident == EPODIdentifiers.eNodeRotation | EPODDefines.startTagMask: # Deprecated
+        rotation = np.frombuffer(self.stream.read(length), dtype=np.float32)
+        isOldFormat = True;
+      
+      elif ident == EPODIdentifiers.eNodeScale | EPODDefines.startTagMask: # Deprecated
+        scale = np.frombuffer(self.stream.read(length), dtype=np.float32)
+        isOldFormat = True;
+      		
+      elif ident == EPODIdentifiers.eNodeMatrix | EPODDefines.startTagMask:	# Deprecated
+        matrix = np.frombuffer(self.stream.read(length), dtype=np.float32)
+        isOldFormat = True;
+      
+      elif ident == EPODIdentifiers.eNodeAnimationPosition | EPODDefines.startTagMask:
+        animation.positions = np.frombuffer(self.stream.read(length), dtype=np.float32)
+      
+      elif ident == EPODIdentifiers.eNodeAnimationRotation | EPODDefines.startTagMask:
+        animation.rotations = np.frombuffer(self.stream.read(length), dtype=np.float32)
+      
+      elif ident == EPODIdentifiers.eNodeAnimationScale | EPODDefines.startTagMask:
+        animation.scales = np.frombuffer(self.stream.read(length), dtype=np.float32)
+      
+      elif ident == EPODIdentifiers.eNodeAnimationMatrix | EPODDefines.startTagMask:
+        animation.matrices = np.frombuffer(self.stream.read(length), dtype=np.float32)
+      
+      elif ident == EPODIdentifiers.eNodeAnimationFlags | EPODDefines.startTagMask:
+        animation.flags = struct.unpack("<I", self.stream.read(4))[0]
+      
+      elif ident == EPODIdentifiers.eNodeAnimationPositionIndex | EPODDefines.startTagMask:
+        animation.positionIndices = np.frombuffer(self.stream.read(length), dtype=np.uint32)
+      
+      elif ident == EPODIdentifiers.eNodeAnimationRotationIndex | EPODDefines.startTagMask:
+        animation.rotationIndices = np.frombuffer(self.stream.read(length), dtype=np.uint32)
+      
+      elif ident == EPODIdentifiers.eNodeAnimationScaleIndex | EPODDefines.startTagMask:
+        animation.scaleIndices = np.frombuffer(self.stream.read(length), dtype=np.uint32)
+      
+      elif ident == EPODIdentifiers.eNodeAnimationMatrixIndex | EPODDefines.startTagMask:
+        animation.matrixIndices = np.frombuffer(self.stream.read(length), dtype=np.uint32)
+      
+      elif ident == EPODIdentifiers.eNodeUserData | EPODDefines.startTagMask:
+        node.userData = self.stream.read(length)
+      
+      # skip unkown blocks
       else:
         self.stream.seek(length, 1)
 
