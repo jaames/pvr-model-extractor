@@ -2,7 +2,13 @@ import struct
 import numpy as np
 
 from EPOD import *
-from PVRMesh import EPVRMesh, PVRMesh
+from PVRModel import PVRModel
+from PVRMesh import PVRMesh, EPVRMesh
+from PVRMaterial import PVRMaterial, EPVRMaterial
+from PVRLight import PVRLight, EPVRLight
+from PVRTexture import PVRTexture
+from PVRCamera import PVRCamera
+from PVRNode import PVRNode
 
 # https://github.com/powervr-graphics/WebGL_SDK/blob/4.0/Tools/PVRPODLoader.js
 
@@ -80,6 +86,7 @@ class PVRPODLoader:
       tag = self.ReadTag()
 
   def ReadSceneBlock(self):
+    model = PVRModel()
     for (ident, length) in self.ReadTags():
 
       if ident == EPODIdentifiers.eScene | EPODDefines.endTagMask:
@@ -87,47 +94,46 @@ class PVRPODLoader:
         break
 
       elif ident == EPODIdentifiers.eSceneClearColour | EPODDefines.startTagMask:
-        print("clear color", np.frombuffer(self.stream.read(12), dtype=np.float32))
+        model.clearColour = np.frombuffer(self.stream.read(12), dtype=np.float32)
 
       elif ident == EPODIdentifiers.eSceneAmbientColour | EPODDefines.startTagMask:
-        print("ambient color", np.frombuffer(self.stream.read(12), dtype=np.float32))
+        model.ambientColour = np.frombuffer(self.stream.read(12), dtype=np.float32)
 
       elif ident == EPODIdentifiers.eSceneNumCameras | EPODDefines.startTagMask:
-        print("cameras", struct.unpack("<i", self.stream.read(4))[0])
+        model.numCameras = struct.unpack("<i", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eSceneNumLights | EPODDefines.startTagMask:
-        print("lights", struct.unpack("<i", self.stream.read(4))[0])
+        model.numLights = struct.unpack("<i", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eSceneNumMeshes | EPODDefines.startTagMask:
-        print("meshes", struct.unpack("<i", self.stream.read(4))[0])
+        model.numMeshes = struct.unpack("<i", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eSceneNumNodes | EPODDefines.startTagMask:
-        print("nodes", struct.unpack("<i", self.stream.read(4))[0])
+        model.numNodes = struct.unpack("<i", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eSceneNumMeshNodes | EPODDefines.startTagMask:
-        print("mesh nodes", struct.unpack("<i", self.stream.read(4))[0])
+        model.numMeshNodes = struct.unpack("<i", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eSceneNumTextures | EPODDefines.startTagMask:
-        print("textures", struct.unpack("<i", self.stream.read(4))[0])
+        model.numTextures = struct.unpack("<i", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eSceneNumMaterials | EPODDefines.startTagMask:
-        print("materials", struct.unpack("<i", self.stream.read(4))[0])
+        model.numMaterials = struct.unpack("<i", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eSceneNumFrames | EPODDefines.startTagMask:
-        print("frames", struct.unpack("<i", self.stream.read(4))[0])
+        model.numFrames = struct.unpack("<i", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eSceneFlags | EPODDefines.startTagMask:
-        print("flags", struct.unpack("<i", self.stream.read(4))[0])
+        model.flags = struct.unpack("<i", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eSceneFPS | EPODDefines.startTagMask:
-        print("fps", struct.unpack("<i", self.stream.read(4))[0])
+        model.fps = struct.unpack("<i", self.stream.read(4))[0]
         
       elif ident == EPODIdentifiers.eSceneUserData | EPODDefines.startTagMask:
-        print("user data")
-        self.stream.read(length)
+        model.userData = self.stream.read(length)
 
       elif ident == EPODIdentifiers.eSceneUnits | EPODDefines.startTagMask:
-        print("units", struct.unpack("<i", self.stream.read(4)))
+        model.units = struct.unpack("<i", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eSceneCamera | EPODDefines.startTagMask:
         print("camera")
@@ -138,20 +144,22 @@ class PVRPODLoader:
         self.stream.read(length)
 
       elif ident == EPODIdentifiers.eSceneMesh | EPODDefines.startTagMask:
-        print("mesh")
-        self.ReadMeshBlock()
+        mesh = self.ReadMeshBlock()
+        model.meshes.append(mesh)
 
       elif ident == EPODIdentifiers.eSceneNode | EPODDefines.startTagMask:
         print("node")
         self.stream.read(length)
 
       elif ident == EPODIdentifiers.eSceneTexture | EPODDefines.startTagMask:
-        print("texture")
-        self.stream.read(length)
+        texture = self.ReadTextureBlock()
+        print("texture", texture.name)
+        model.textures.append(texture)
 
       elif ident == EPODIdentifiers.eSceneMaterial | EPODDefines.startTagMask:
-        print("material")
-        self.stream.read(length)
+        material = self.ReadMaterialBlock()
+        print("material", material.name)
+        model.materials.append(material)
 
       # Skip unimplemented block types
       else:
@@ -162,7 +170,6 @@ class PVRPODLoader:
     numUVWs = 0
     podUVWs = 0
     interleavedDataIndex = -1
-
     for (ident, length) in self.ReadTags():
 
       if ident == EPODIdentifiers.eSceneMesh | EPODDefines.endTagMask:
@@ -238,6 +245,116 @@ class PVRPODLoader:
       elif ident == EPODIdentifiers.eMeshBoneWeightList | EPODDefines.startTagMask:
         self.ReadVertexData(mesh, "BONEWEIGHT", ident, interleavedDataIndex)
 
+      else:
+        self.stream.seek(length, 1)
+
+  def ReadTextureBlock(self):
+    texture = PVRTexture()
+    for (ident, length) in self.ReadTags():
+      if ident == EPODIdentifiers.eSceneTexture | EPODDefines.endTagMask:
+        # do final checks
+        return texture
+
+      elif ident == EPODIdentifiers.eTextureFilename | EPODDefines.startTagMask:
+        texture.name = self.stream.read(length).decode("utf-8")
+        
+      # skip unkown blocks
+      else:
+        self.stream.seek(length, 1)
+
+  def ReadMaterialBlock(self):
+    material = PVRMaterial()
+
+    for (ident, length) in self.ReadTags():
+      if ident == EPODIdentifiers.eSceneMaterial | EPODDefines.endTagMask:
+        # do final checks
+        return material
+
+      elif ident == EPODIdentifiers.eMaterialName | EPODDefines.startTagMask:
+        material.name = self.stream.read(length).decode("utf-8")
+
+      elif ident == EPODIdentifiers.eMaterialDiffuseTextureIndex | EPODDefines.startTagMask:
+        material.diffuseTextureIndex = struct.unpack("<i", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialOpacity | EPODDefines.startTagMask:
+        material.opacity = struct.unpack("<f", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialAmbientColour | EPODDefines.startTagMask:
+        material.ambient = np.frombuffer(self.stream.read(12), dtype=np.float32)
+        
+      elif ident == EPODIdentifiers.eMaterialDiffuseColour | EPODDefines.startTagMask:
+        material.diffuse = np.frombuffer(self.stream.read(12), dtype=np.float32)
+
+      elif ident == EPODIdentifiers.eMaterialSpecularColour | EPODDefines.startTagMask:
+        material.specular = np.frombuffer(self.stream.read(12), dtype=np.float32)
+
+      elif ident == EPODIdentifiers.eMaterialShininess | EPODDefines.startTagMask:
+        material.specular = struct.unpack("<f", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialEffectFile | EPODDefines.startTagMask:
+        material.effectFile = self.stream.read(length).decode("utf-8")
+
+      elif ident == EPODIdentifiers.eMaterialEffectName | EPODDefines.startTagMask:
+        material.effectName = self.stream.read(length).decode("utf-8")
+
+      elif ident == EPODIdentifiers.eMaterialAmbientTextureIndex | EPODDefines.startTagMask:
+        material.ambientTextureIndex = struct.unpack("<i", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialSpecularColourTextureIndex | EPODDefines.startTagMask:
+        material.specularColourTextureIndex = struct.unpack("<i", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialSpecularLevelTextureIndex | EPODDefines.startTagMask:
+        material.specularLevelTextureIndex = struct.unpack("<i", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialBumpMapTextureIndex | EPODDefines.startTagMask:
+        material.bumpMapTextureIndex = struct.unpack("<i", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialEmissiveTextureIndex | EPODDefines.startTagMask:
+        material.emissiveTextureIndex = struct.unpack("<i", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialGlossinessTextureIndex | EPODDefines.startTagMask:
+        material.glossinessTextureIndex = struct.unpack("<i", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialOpacityTextureIndex | EPODDefines.startTagMask:
+        material.opacityTextureIndex = struct.unpack("<i", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialReflectionTextureIndex | EPODDefines.startTagMask:
+        material.reflectionTextureIndex = struct.unpack("<i", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialRefractionTextureIndex | EPODDefines.startTagMask:
+        material.refractionTextureIndex = struct.unpack("<i", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialBlendingRGBSrc | EPODDefines.startTagMask:
+        material.blendSrcRGB = struct.unpack("<I", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialBlendingAlphaSrc | EPODDefines.startTagMask:
+        material.blendSrcA = struct.unpack("<I", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialBlendingRGBDst | EPODDefines.startTagMask:
+        material.blendDstRGB = struct.unpack("<I", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialBlendingAlphaDst | EPODDefines.startTagMask:
+        material.blendDstA = struct.unpack("<I", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialBlendingRGBOperation | EPODDefines.startTagMask:
+        material.blendOpRGB = struct.unpack("<I", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialBlendingAlphaOperation | EPODDefines.startTagMask:
+        material.blendOpA = struct.unpack("<I", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialBlendingRGBAColour | EPODDefines.startTagMask:
+        material.blendColour = np.frombuffer(self.stream.read(length), dtype=np.float32)
+
+      elif ident == EPODIdentifiers.eMaterialBlendingFactorArray | EPODDefines.startTagMask:
+        material.blendFactor = np.frombuffer(self.stream.read(length), dtype=np.float32)
+
+      elif ident == EPODIdentifiers.eMaterialFlags | EPODDefines.startTagMask:
+        material.flags = struct.unpack("<I", self.stream.read(4))[0]
+
+      elif ident == EPODIdentifiers.eMaterialUserData | EPODDefines.startTagMask:
+        material.userData = self.stream.read(length)
+
+      # skip unkown blocks
       else:
         self.stream.seek(length, 1)
 
