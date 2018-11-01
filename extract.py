@@ -24,7 +24,7 @@ for (meshIndex, mesh) in enumerate(scene.meshes):
 
   # face index buffer view
   indices = mesh.faces["data"]
-  indicesAccessor = glb.addAccessor({
+  indicesAccessorIndex = glb.addAccessor({
     "bufferView": glb.addBufferView({
       "buffer": 0,
       "byteOffset": glb.addData(indices.tobytes()),
@@ -38,66 +38,42 @@ for (meshIndex, mesh) in enumerate(scene.meshes):
     "type": "SCALAR"
   })
 
-
   # vertex buffer view
   vertexElements = mesh.vertexElements
-  print(vertexElements)
   vertexBufferView = glb.addBufferView({
     "buffer": 0,
     "byteOffset": glb.addData(mesh.vertexElementData[0]),
-    "byteStride": vertexElements["POSITION0"]["stride"],
+    "byteStride": vertexElements["POSITION"]["stride"],
     "byteLength": len(mesh.vertexElementData[0]),
   })
 
-  # if "POSITION0" in vertexElements:
-  positionAccessor = glb.addAccessor({
-    "bufferView": vertexBufferView,
-    "byteOffset": 0,
-    # https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#accessor-element-size
-    "componentType": 5126,
-    "count": numVertices,
-    "type": "VEC3"
-  })
-  attributes["POSITION"] = positionAccessor
+  for name in vertexElements:
+    element = vertexElements[name]
+    componentType = 5126
+    type = "VEC3"
+    
+    if name == "TEXCOORD_0":
+      type = "VEC2"
+    
+    elif name == "COLOR_0": # not implemented
+      continue
 
-  # if "NORMAL0" in vertexElements:
-  normalAccessor = glb.addAccessor({
-    "bufferView": vertexBufferView,
-    "byteOffset": 12,
-    # https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#accessor-element-size
-    "componentType": 5126,
-    "count": numVertices,
-    "type": "VEC3"
-  })
-  attributes["NORMAL"] = normalAccessor
-
-  # if "TANGENT0" in vertexElements:
-  tangentAccessor = glb.addAccessor({
-    "bufferView": vertexBufferView,
-    "byteOffset": 24,
-    # https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#accessor-element-size
-    "componentType": 5126,
-    "count": numVertices,
-    "type": "VEC3"
-  })
-  attributes["TANGENT"] = tangentAccessor
-
-  uvAccessor = glb.addAccessor({
-    "bufferView": vertexBufferView,
-    "byteOffset": 36,
-    # https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#accessor-element-size
-    "componentType": 5126,
-    "count": numVertices,
-    "type": "VEC2"
-  })
-  attributes["TEXCOORD_0"] = uvAccessor
+    accessorIndex = glb.addAccessor({
+      "bufferView": vertexBufferView,
+      "byteOffset": element["offset"],
+      # https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#accessor-element-size
+      "componentType": componentType,
+      "count": numVertices,
+      "type": type
+    })
+    attributes[name] = accessorIndex
 
   # POD meshes only have one primitive?
   # https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#primitive
   glb.addMesh({
     "primitives": [{
       "attributes": attributes,
-      "indices": indicesAccessor,
+      "indices": indicesAccessorIndex,
       "mode": 4,
     }],
   })

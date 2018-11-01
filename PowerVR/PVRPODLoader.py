@@ -298,29 +298,29 @@ class PVRPODLoader:
         mesh.AddFaces(data, dataType)
 
       elif ident == EPODIdentifiers.eMeshVertexList | EPODDefines.startTagMask:
-        self.ReadVertexData(mesh, "POSITION0", ident, interleavedDataIndex)
+        self.ReadVertexData(mesh, "POSITION", ident, interleavedDataIndex)
 
       elif ident == EPODIdentifiers.eMeshNormalList | EPODDefines.startTagMask:
-        self.ReadVertexData(mesh, "NORMAL0", ident, interleavedDataIndex)
+        self.ReadVertexData(mesh, "NORMAL", ident, interleavedDataIndex)
 
       elif ident == EPODIdentifiers.eMeshTangentList | EPODDefines.startTagMask:
-        self.ReadVertexData(mesh, "TANGENT0", ident, interleavedDataIndex)
+        self.ReadVertexData(mesh, "TANGENT", ident, interleavedDataIndex)
 
       elif ident == EPODIdentifiers.eMeshBinormalList | EPODDefines.startTagMask:
-        self.ReadVertexData(mesh, "BINORMAL0", ident, interleavedDataIndex)
+        self.ReadVertexData(mesh, "BINORMAL", ident, interleavedDataIndex)
 
       elif ident == EPODIdentifiers.eMeshUVWList | EPODDefines.startTagMask:
-        self.ReadVertexData(mesh, "UV" + str(numUVWs), ident, interleavedDataIndex)
+        self.ReadVertexData(mesh, "TEXCOORD_" + str(numUVWs), ident, interleavedDataIndex)
         numUVWs += 1
       
       elif ident == EPODIdentifiers.eMeshVertexColourList | EPODDefines.startTagMask:
-        self.ReadVertexData(mesh, "VERTEXCOLOR0", ident, interleavedDataIndex)
+        self.ReadVertexData(mesh, "COLOR_0", ident, interleavedDataIndex)
       
       elif ident == EPODIdentifiers.eMeshBoneIndexList | EPODDefines.startTagMask:
-        self.ReadVertexData(mesh, "BONEINDEX0", ident, interleavedDataIndex)
+        self.ReadVertexData(mesh, "JOINTS_0", ident, interleavedDataIndex)
       
       elif ident == EPODIdentifiers.eMeshBoneWeightList | EPODDefines.startTagMask:
-        self.ReadVertexData(mesh, "BONEWEIGHT", ident, interleavedDataIndex)
+        self.ReadVertexData(mesh, "WEIGHTS_0", ident, interleavedDataIndex)
 
       else:
         self.stream.seek(length, 1)
@@ -487,11 +487,12 @@ class PVRPODLoader:
         stride = struct.unpack("<i", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eBlockData | EPODDefines.startTagMask:
-        if dataIndex == -1:
-          data = np.frombuffer(self.stream.read(length), dtype=PVRVertexDataTypeMap[dataType])
-          dataIndex = mesh.AddData(data)
-        else:
-          offset = struct.unpack("<I", self.stream.read(4))[0]
+        # if dataIndex == -1:
+        #   print(struct.unpack("<I", self.stream.read(4))[0])
+        #   # data = np.frombuffer(self.stream.read(length), dtype=PVRVertexDataTypeMap[dataType])
+        #   # dataIndex = mesh.AddData(data)
+        # else:
+        offset = struct.unpack("<I", self.stream.read(4))[0]
 
       else: 
         self.stream.seek(length, 1)
