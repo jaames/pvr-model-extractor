@@ -1,12 +1,20 @@
 from PowerVR.PVRPODLoader import PVRPODLoader
 from GLB.GLBExporter import GLBExporter
 import json
+import os
 import numpy as np
 
 glb = GLBExporter()
 pod = PVRPODLoader.open("./test2.pod")
 
 scene = pod.scene
+
+for (textureIndex, texture) in enumerate(scene.textures):
+  texture.open()
+  glb.addTexture({
+    "name": texture.name
+  })
+  print(texture.name, texture.width, texture.width, texture.colorSpace)
 
 for (materialIndex, material) in enumerate(scene.materials):
   glb.addMaterial({
@@ -98,10 +106,5 @@ for (nodeIndex, node) in enumerate(scene.nodes):
     glb.addRootNodeIndex(nodeIndex)
   
   glb.addNode(nodeEntry)
-
-# for mesh in scene.meshes:
-#   print(mesh.vertexElements)
-
-# print(glb.buildJSON())
 
 glb.save("./test2.glb")

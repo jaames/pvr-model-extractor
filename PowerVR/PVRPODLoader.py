@@ -333,7 +333,7 @@ class PVRPODLoader:
         return texture
 
       elif ident == EPODIdentifiers.eTextureFilename | EPODDefines.startTagMask:
-        texture.name = self.ReadString(length)
+        texture.setName(self.ReadString(length))
         
       # skip unkown blocks
       else:
