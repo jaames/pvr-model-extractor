@@ -4,7 +4,7 @@ import json
 import numpy as np
 
 glb = GLBExporter()
-pod = PVRPODLoader.open("./test2.pod")
+pod = PVRPODLoader.open("./test.pod")
 
 scene = pod.scene
 
@@ -26,26 +26,26 @@ for (meshIndex, mesh) in enumerate(scene.meshes):
   mode = 4
 
   # face buffer view
-  # faceData = mesh.faces["data"]
-  # dataOffset = glb.addData(faceData.tobytes())
-  # numFaces = mesh.primitiveData["numFaces"]
+  faceData = mesh.faces["data"]
+  dataOffset = glb.addData(faceData.tobytes())
+  numFaces = mesh.primitiveData["numFaces"]
 
-  # bufferViewIndex = glb.addBufferView({
-  #   "buffer": 0,
-  #   "byteOffset": dataOffset,
-  #   "byteLength": faceData.nbytes,
-  #   "target": 34963
-  # })
+  bufferViewIndex = glb.addBufferView({
+    "buffer": 0,
+    "byteOffset": dataOffset,
+    "byteLength": faceData.nbytes,
+    "target": 34963
+  })
 
-  # # vert POSITION accessor
-  # accessorIndex = glb.addAccessor({
-  #   "bufferView": bufferViewIndex,
-  #   "byteOffset": 0,
-  #   # https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#accessor-element-size
-  #   "componentType": 5123,
-  #   "count": numFaces,
-  #   "type": "SCALAR"
-  # })
+  accessorIndex = glb.addAccessor({
+    "bufferView": bufferViewIndex,
+    "byteOffset": 0,
+    # https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#accessor-element-size
+    "componentType": 5123,
+    "count": numFaces * 3,
+    "type": "SCALAR"
+  })
+  indices = accessorIndex
 
   # vert POSITION buffer view
   positionData = mesh.vertexElements["POSITION0"]
@@ -74,7 +74,7 @@ for (meshIndex, mesh) in enumerate(scene.meshes):
   glb.addMesh({
     "primitives": [{
       "attributes": attributes,
-      # "indices": indices,
+      "indices": indices,
       "mode": mode,
     }],
   })
@@ -112,4 +112,4 @@ for (nodeIndex, node) in enumerate(scene.nodes):
 
 # print(glb.buildJSON())
 
-glb.save("./test2.glb")
+glb.save("./test.glb")
