@@ -4,7 +4,7 @@ import json
 import numpy as np
 
 glb = GLBExporter()
-pod = PVRPODLoader.open("./test.pod")
+pod = PVRPODLoader.open("./test2.pod")
 
 scene = pod.scene
 
@@ -18,64 +18,88 @@ for (materialIndex, material) in enumerate(scene.materials):
   })
 
 for (meshIndex, mesh) in enumerate(scene.meshes):
-  # POD meshes only have one primitive?
-  # https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#primitive
   attributes = {}
-  indices = 0
-  # change to 4 for tris
-  mode = 4
+  numFaces = mesh.primitiveData["numFaces"]
+  numVertices = mesh.primitiveData["numVertices"]
 
   # face buffer view
-  faceData = mesh.faces["data"]
-  dataOffset = glb.addData(faceData.tobytes())
-  numFaces = mesh.primitiveData["numFaces"]
-
-  bufferViewIndex = glb.addBufferView({
-    "buffer": 0,
-    "byteOffset": dataOffset,
-    "byteLength": faceData.nbytes,
-    "target": 34963
-  })
-
-  accessorIndex = glb.addAccessor({
-    "bufferView": bufferViewIndex,
+  indices = mesh.faces["data"]
+  indicesAccessor = glb.addAccessor({
+    "bufferView": glb.addBufferView({
+      "buffer": 0,
+      "byteOffset": glb.addData(indices.tobytes()),
+      "byteLength": indices.nbytes,
+      "target": 34963
+    }),
     "byteOffset": 0,
     # https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#accessor-element-size
     "componentType": 5123,
     "count": numFaces * 3,
     "type": "SCALAR"
   })
-  indices = accessorIndex
 
   # vert POSITION buffer view
-  positionData = mesh.vertexElements["POSITION0"]
-  dataOffset = glb.addData(mesh.vertexElementData[0])
-  numVertices = mesh.primitiveData["numVertices"]
-
-  bufferViewIndex = glb.addBufferView({
+  vertexElements = mesh.vertexElements
+  vertexBufferView = glb.addBufferView({
     "buffer": 0,
-    "byteOffset": dataOffset,
-    "byteStride": positionData["stride"],
+    "byteOffset": glb.addData(mesh.vertexElementData[0]),
+    "byteStride": vertexElements["POSITION0"]["stride"],
     "byteLength": len(mesh.vertexElementData[0]),
   })
 
   # vert POSITION accessor
-  accessorIndex = glb.addAccessor({
-    "bufferView": bufferViewIndex,
-    "byteOffset": 0,
-    # https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#accessor-element-size
-    "componentType": 5126,
-    "count": numVertices,
-    "type": "VEC3"
-  })
 
-  attributes["POSITION"] = accessorIndex
+  if "POSITION0" in vertexElements:
+    positionAccessor = glb.addAccessor({
+      "bufferView": vertexBufferView,
+      "byteOffset": 0,
+      # https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#accessor-element-size
+      "componentType": 5126,
+      "count": numVertices,
+      "type": "VEC3"
+    })
+    attributes["POSITION"] = positionAccessor
 
+  if "NORMAL0" in vertexElements:
+    normalAccessor = glb.addAccessor({
+      "bufferView": vertexBufferView,
+      "byteOffset": 0,
+      # https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#accessor-element-size
+      "componentType": 5126,
+      "count": numVertices,
+      "type": "VEC3"
+    })
+    attributes["NORMAL"] = normalAccessor
+
+  if "TANGENT0" in vertexElements:
+    tangentAccessor = glb.addAccessor({
+      "bufferView": vertexBufferView,
+      "byteOffset": 0,
+      # https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#accessor-element-size
+      "componentType": 5126,
+      "count": numVertices,
+      "type": "VEC3"
+    })
+    attributes["TANGENT"] = tangentAccessor
+
+  if "UV0" in vertexElements:
+    uvAccessor = glb.addAccessor({
+      "bufferView": vertexBufferView,
+      "byteOffset": 0,
+      # https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#accessor-element-size
+      "componentType": 5126,
+      "count": numVertices,
+      "type": "VEC2"
+    })
+    attributes["TEXCOORD_0"] = uvAccessor
+
+  # POD meshes only have one primitive?
+  # https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#primitive
   glb.addMesh({
     "primitives": [{
       "attributes": attributes,
-      "indices": indices,
-      "mode": mode,
+      "indices": indicesAccessor,
+      "mode": 4,
     }],
   })
 
@@ -97,9 +121,7 @@ for (nodeIndex, node) in enumerate(scene.nodes):
     if node.name == "headwear0002":
       mesh = scene.meshes[meshIndex]
       faceData = mesh.faces["data"]
-      print(faceData.nbytes)
-      print(mesh.vertexElements["POSITION0"])
-      print(mesh.primitiveData["numFaces"])
+      print(mesh.vertexElements)
 
   # if the node index is -1 it is a root node
   if node.parentIndex == -1:
@@ -112,4 +134,4 @@ for (nodeIndex, node) in enumerate(scene.nodes):
 
 # print(glb.buildJSON())
 
-glb.save("./test.glb")
+glb.save("./test2.glb")
