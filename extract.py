@@ -92,11 +92,6 @@ for (nodeIndex, node) in enumerate(scene.nodes):
     nodeEntry["mesh"] = meshIndex
     if node.materialIndex != -1:
       glb.meshes[meshIndex]["primitives"][0]["material"] = node.materialIndex
-    
-    if node.name == "headwear0002":
-      mesh = scene.meshes[meshIndex]
-      faceData = mesh.faces["data"]
-      print(mesh.vertexElements)
 
   # if the node index is -1 it is a root node
   if node.parentIndex == -1:
