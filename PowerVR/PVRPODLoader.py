@@ -60,6 +60,11 @@ class PVRPODLoader:
     self.scene = None
     self.versionString = None
     self.Read()
+
+  @classmethod
+  def open(cls, path):
+    with open(path, "rb") as buffer:
+      return cls(buffer)
   
   def Read(self):
     for (ident, length) in self.ReadTags():
