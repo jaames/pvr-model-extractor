@@ -18,6 +18,7 @@ class GLBExporter:
     self.bufferViews = []
     self.accessors = []
     self.meshes = []
+    self.materials = []
 
   def addRootNodeIndex(self, index):
     self.scenes[0]["nodes"].append(index)
@@ -27,6 +28,24 @@ class GLBExporter:
 
   def addMesh(self, mesh):
     self.meshes.append(mesh)
+
+  def addMaterial(self, material):
+    self.materials.append(material)
+  
+  def addData(self, data):
+    offset = len(self.data)
+    self.data += data
+    return offset
+  
+  def addBufferView(self, bufferView):
+    index = len(self.bufferViews)
+    self.bufferViews.append(bufferView)
+    return index
+  
+  def addAccessor(self, accessor):
+    index = len(self.accessors)
+    self.accessors.append(accessor)
+    return index
   
   def buildJSON(self):
     return {
@@ -37,7 +56,8 @@ class GLBExporter:
       "buffers": self.buffers,
       "bufferViews": self.bufferViews,
       "accessors": self.accessors,
-      "meshes": self.meshes
+      "meshes": self.meshes,
+      "materials": self.materials,
     }
   
   def save(self, path):
