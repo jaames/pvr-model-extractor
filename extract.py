@@ -9,23 +9,45 @@ glb = GLBExporter()
 pod = PVRPODLoader.open("./test2.pod")
 
 for (textureIndex, texture) in enumerate(pod.scene.textures):
-  glb.addTexture({
-    "name": texture.name
+  glb.addImage({
+    "uri": texture.name + ".png"
   })
-  # sp.call([
-  #   "./PVRTexToolCLI",
-  #   "-f", "r8g8b8a8",
-  #   "-i", path.join("./", texture.name + ".pvr"),
-  #   "-d", path.join("./", texture.name + ".png")
-  # ])
+  glb.addSampler({
+    "magFilter": 9729,
+    "minFilter": 9987,
+    "wrapS": 10497,
+    "wrapT": 10497
+  })
+  glb.addTexture({
+    "name": texture.name,
+    "sampler": textureIndex,
+    "source": textureIndex
+  })
+
+  sp.call([
+    "./PVRTexToolCLI",
+    "-f", "r8g8b8a8",
+    "-i", path.join("./", texture.name + ".pvr"),
+    "-d", path.join("./", texture.name + ".png")
+  ])
 
 for (materialIndex, material) in enumerate(pod.scene.materials):
-  glb.addMaterial({
-    "name": material.name,
-    "pbrMetallicRoughness": {
+  if material.diffuseTextureIndex > -1:
+    pbr = {
+      "baseColorTexture": {
+        "index": material.diffuseTextureIndex,
+        "texCoord": 1
+      },
+      "roughnessFactor": 1 - material.shininess,
+    }
+  else: 
+    pbr = {
       "baseColorFactor": material.diffuse.tolist() + [1],
       "roughnessFactor": 1 - material.shininess,
     }
+  glb.addMaterial({
+    "name": material.name,
+    "pbrMetallicRoughness": pbr
   })
 
 for (meshIndex, mesh) in enumerate(pod.scene.meshes):

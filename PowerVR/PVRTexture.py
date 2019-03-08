@@ -27,7 +27,7 @@ class PVRTexture:
     self.flags = 0
     self.pixelFormatH = 0
     self.pixelFormatL = 0
-    self.colourSpace = 0;
+    self.colourSpace = 0
     self.channelType = 0
     self.height = 1
     self.width = 1

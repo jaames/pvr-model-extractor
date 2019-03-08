@@ -20,6 +20,8 @@ class GLBExporter:
     self.meshes = []
     self.materials = []
     self.textures = []
+    self.images = []
+    self.samplers = []
 
   def addRootNodeIndex(self, index):
     self.scenes[0]["nodes"].append(index)
@@ -35,6 +37,12 @@ class GLBExporter:
 
   def addTexture(self, texture):
     self.textures.append(texture)
+
+  def addImage(self, image):
+    self.images.append(image)
+
+  def addSampler(self, sampler):
+    self.samplers.append(sampler)
   
   def addData(self, data):
     offset = len(self.data)
@@ -62,6 +70,9 @@ class GLBExporter:
       "accessors": self.accessors,
       "meshes": self.meshes,
       "materials": self.materials,
+      "textures": self.textures,
+      "images": self.images,
+      "samplers": self.samplers,
     }
   
   def save(self, path):
@@ -75,10 +86,10 @@ class GLBExporter:
       # pad binary data with null bytes
       self.data += bytes((4 - len(self.data) % 4))
       # write fileheader
-      f.write(pack("<III", 0x46546C67, 2, len(json_data) + len(self.data) + 28))
+      f.write(pack("<4sII", b'glTF', 2, len(json_data) + len(self.data) + 28))
       # write json chunk
-      f.write(pack("<II", len(json_data), 0x4E4F534A))
+      f.write(pack("<I4s", len(json_data), b'JSON'))
       f.write(json_data.encode())
       # write data chunk
-      f.write(pack("<II", len(self.data), 0x004E4942))
+      f.write(pack("<I4s", len(self.data), b'BIN\x00'))
       f.write(self.data)
