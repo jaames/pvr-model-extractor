@@ -2,21 +2,24 @@ from PowerVR.PVRPODLoader import PVRPODLoader
 from GLB.GLBExporter import GLBExporter
 import json
 import os
-import numpy as np
+from os import path
+import subprocess as sp
 
 glb = GLBExporter()
 pod = PVRPODLoader.open("./test2.pod")
 
-scene = pod.scene
-
-for (textureIndex, texture) in enumerate(scene.textures):
-  texture.open()
+for (textureIndex, texture) in enumerate(pod.scene.textures):
   glb.addTexture({
     "name": texture.name
   })
-  print(texture.name, texture.width, texture.width, texture.colorSpace)
+  # sp.call([
+  #   "./PVRTexToolCLI",
+  #   "-f", "r8g8b8a8",
+  #   "-i", path.join("./", texture.name + ".pvr"),
+  #   "-d", path.join("./", texture.name + ".png")
+  # ])
 
-for (materialIndex, material) in enumerate(scene.materials):
+for (materialIndex, material) in enumerate(pod.scene.materials):
   glb.addMaterial({
     "name": material.name,
     "pbrMetallicRoughness": {
@@ -25,7 +28,7 @@ for (materialIndex, material) in enumerate(scene.materials):
     }
   })
 
-for (meshIndex, mesh) in enumerate(scene.meshes):
+for (meshIndex, mesh) in enumerate(pod.scene.meshes):
   attributes = {}
   numFaces = mesh.primitiveData["numFaces"]
   numVertices = mesh.primitiveData["numVertices"]
@@ -36,7 +39,7 @@ for (meshIndex, mesh) in enumerate(scene.meshes):
     "bufferView": glb.addBufferView({
       "buffer": 0,
       "byteOffset": glb.addData(indices.tobytes()),
-      "byteLength": indices.nbytes,
+      "byteLength": len(indices) * indices.itemsize,
       "target": 34963
     }),
     "byteOffset": 0,
@@ -86,10 +89,10 @@ for (meshIndex, mesh) in enumerate(scene.meshes):
     }],
   })
 
-for (nodeIndex, node) in enumerate(scene.nodes):
+for (nodeIndex, node) in enumerate(pod.scene.nodes):
   nodeEntry = {
     "name": node.name,
-    "children": [i for (i, node) in enumerate(scene.nodes) if node.parentIndex == nodeIndex],
+    "children": [i for (i, node) in enumerate(pod.scene.nodes) if node.parentIndex == nodeIndex],
     "translation": node.animation.positions.tolist(),
     "scale": node.animation.scales[0:3].tolist(),
     "rotation": node.animation.rotations[0:4].tolist(),

@@ -1,7 +1,6 @@
 # https://github.com/powervr-graphics/WebGL_SDK/blob/4.0/Tools/PVRTexture.js
 # http://cdn.imgtec.com/sdk-documentation/PVR%20File%20Format.Specification.pdf
 from os import path
-import struct
 
 class EPVRTexture:
   class ChannelTypes:
@@ -37,24 +36,9 @@ class PVRTexture:
     self.numFaces = 1
     self.MIPMapCount = 1
     self.metaDataSize = 0
-    self.stream = None
 
   def setName(self, name):
     self.name = path.splitext(name)[0]
-  
-  def open(self, dir="./", ext=".pvr"):
-    resource = path.join(dir, self.name + ext)
-    with open(resource, "rb") as stream:
-      self.stream = stream
-      self.read()
-  
-  def read(self):
-    meta = {}
-    self.version, self.flags = struct.unpack("<II", self.stream.read(8))
-    self.pixelFormatH, self.pixelFormatL = struct.unpack("<II", self.stream.read(8))
-    self.colorSpace, self.channelType = struct.unpack("<II", self.stream.read(8))
-    self.height, self.width, self.depth = struct.unpack("<III", self.stream.read(12))
-    self.numSurfaces, self.numFaces = struct.unpack("<II", self.stream.read(8))
-    self.MIPMapCount, self.metadataSize = struct.unpack("<II", self.stream.read(8))
 
-    
+  def getPath(self, dir="./", ext=".pvr"):
+    return path.join(dir, self.name + ext)
