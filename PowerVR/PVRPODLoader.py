@@ -5,9 +5,9 @@ from PowerVR.EPOD import *
 from PowerVR.PVRModel import PVRModel
 from PowerVR.PVRMesh import PVRMesh, EPVRMesh
 from PowerVR.PVRMaterial import PVRMaterial, EPVRMaterial
-from PowerVR.PVRLight import PVRLight, EPVRLight
+# from PowerVR.PVRLight import PVRLight, EPVRLight
 from PowerVR.PVRTexture import PVRTexture
-from PowerVR.PVRCamera import PVRCamera
+# from PowerVR.PVRCamera import PVRCamera
 from PowerVR.PVRNode import PVRNode
 
 # https://github.com/powervr-graphics/WebGL_SDK/blob/4.0/Tools/PVRPODLoader.js

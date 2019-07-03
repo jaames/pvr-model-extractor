@@ -3,6 +3,7 @@
 *.pvr
 *.glb
 *.png
+*.bin
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
