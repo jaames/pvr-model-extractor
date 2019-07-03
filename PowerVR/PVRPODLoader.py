@@ -1,58 +1,16 @@
 import struct
-import numpy as np
+import array
 
 from PowerVR.EPOD import *
 from PowerVR.PVRModel import PVRModel
 from PowerVR.PVRMesh import PVRMesh, EPVRMesh
 from PowerVR.PVRMaterial import PVRMaterial, EPVRMaterial
-from PowerVR.PVRLight import PVRLight, EPVRLight
+# from PowerVR.PVRLight import PVRLight, EPVRLight
 from PowerVR.PVRTexture import PVRTexture
-from PowerVR.PVRCamera import PVRCamera
+# from PowerVR.PVRCamera import PVRCamera
 from PowerVR.PVRNode import PVRNode
 
 # https://github.com/powervr-graphics/WebGL_SDK/blob/4.0/Tools/PVRPODLoader.js
-
-PVRVertexDataTypeSize = {
-  EPVRMesh.VertexData.eFloat: 4,
-  EPVRMesh.VertexData.eInt: 4,
-  EPVRMesh.VertexData.eUnsignedInt: 4,
-  EPVRMesh.VertexData.eShort: 2,
-  EPVRMesh.VertexData.eShortNorm: 2,
-  EPVRMesh.VertexData.eUnsignedShort: 2,
-  EPVRMesh.VertexData.eUnsignedShortNorm: 2,
-  EPVRMesh.VertexData.eRGBA: 4,
-  EPVRMesh.VertexData.eABGR: 4,
-  EPVRMesh.VertexData.eARGB: 4,
-  EPVRMesh.VertexData.eD3DCOLOR: 4,
-  EPVRMesh.VertexData.eUBYTE4: 4,
-  EPVRMesh.VertexData.eDEC3N: 4,
-  EPVRMesh.VertexData.eFixed16_16: 4,
-  EPVRMesh.VertexData.eUnsignedByte: 1,
-  EPVRMesh.VertexData.eUnsignedByteNorm: 1,
-  EPVRMesh.VertexData.eByte: 1,
-  EPVRMesh.VertexData.eByteNorm: 1
-}
-
-PVRVertexDataTypeMap = {
-  EPVRMesh.VertexData.eFloat: np.float32,
-  EPVRMesh.VertexData.eInt: np.int32,
-  EPVRMesh.VertexData.eUnsignedInt: np.uint32,
-  EPVRMesh.VertexData.eShort: np.int16,
-  EPVRMesh.VertexData.eShortNorm: np.int16,
-  EPVRMesh.VertexData.eUnsignedShort: np.uint16,
-  EPVRMesh.VertexData.eUnsignedShortNorm: np.uint16,
-  EPVRMesh.VertexData.eRGBA: np.uint32,
-  EPVRMesh.VertexData.eABGR: np.uint32,
-  EPVRMesh.VertexData.eARGB: np.uint32,
-  EPVRMesh.VertexData.eD3DCOLOR: np.uint32,
-  EPVRMesh.VertexData.eUBYTE4: np.uint32,
-  EPVRMesh.VertexData.eDEC3N: np.uint32,
-  EPVRMesh.VertexData.eFixed16_16: np.uint32,
-  EPVRMesh.VertexData.eUnsignedByte: np.uint8,
-  EPVRMesh.VertexData.eUnsignedByteNorm: np.uint8,
-  EPVRMesh.VertexData.eByte: np.int8,
-  EPVRMesh.VertexData.eByteNorm: np.int8
-}
 
 class PVRPODLoader:
   def __init__(self, stream):
@@ -101,10 +59,10 @@ class PVRPODLoader:
         return model
 
       elif ident == EPODIdentifiers.eSceneClearColour | EPODDefines.startTagMask:
-        model.clearColour = np.frombuffer(self.stream.read(12), dtype=np.float32)
+        model.clearColour = array.array('f', self.stream.read(12))
 
       elif ident == EPODIdentifiers.eSceneAmbientColour | EPODDefines.startTagMask:
-        model.ambientColour = np.frombuffer(self.stream.read(12), dtype=np.float32)
+        model.ambientColour = array.array('f', self.stream.read(12))
 
       elif ident == EPODIdentifiers.eSceneNumCameras | EPODDefines.startTagMask:
         model.numCameras = struct.unpack("<i", self.stream.read(4))[0]
@@ -193,47 +151,47 @@ class PVRPODLoader:
         node.parentIndex = struct.unpack("<i", self.stream.read(4))[0]
       
       elif ident == EPODIdentifiers.eNodePosition | EPODDefines.startTagMask: # Deprecated
-        pos = np.frombuffer(self.stream.read(length), dtype=np.float32)
+        pos = array.array('f', self.stream.read(length))
         isOldFormat = True;
       
       elif ident == EPODIdentifiers.eNodeRotation | EPODDefines.startTagMask: # Deprecated
-        rotation = np.frombuffer(self.stream.read(length), dtype=np.float32)
+        rotation = array.array('f', self.stream.read(length))
         isOldFormat = True;
       
       elif ident == EPODIdentifiers.eNodeScale | EPODDefines.startTagMask: # Deprecated
-        scale = np.frombuffer(self.stream.read(length), dtype=np.float32)
+        scale = array.array('f', self.stream.read(length))
         isOldFormat = True;
       		
       elif ident == EPODIdentifiers.eNodeMatrix | EPODDefines.startTagMask:	# Deprecated
-        matrix = np.frombuffer(self.stream.read(length), dtype=np.float32)
+        matrix = array.array('f', self.stream.read(length))
         isOldFormat = True;
       
       elif ident == EPODIdentifiers.eNodeAnimationPosition | EPODDefines.startTagMask:
-        animation.positions = np.frombuffer(self.stream.read(length), dtype=np.float32)
+        animation.positions = array.array('f', self.stream.read(length))
       
       elif ident == EPODIdentifiers.eNodeAnimationRotation | EPODDefines.startTagMask:
-        animation.rotations = np.frombuffer(self.stream.read(length), dtype=np.float32)
+        animation.rotations = array.array('f', self.stream.read(length))
       
       elif ident == EPODIdentifiers.eNodeAnimationScale | EPODDefines.startTagMask:
-        animation.scales = np.frombuffer(self.stream.read(length), dtype=np.float32)
+        animation.scales = array.array('f', self.stream.read(length))
       
       elif ident == EPODIdentifiers.eNodeAnimationMatrix | EPODDefines.startTagMask:
-        animation.matrices = np.frombuffer(self.stream.read(length), dtype=np.float32)
+        animation.matrices = array.array('f', self.stream.read(length))
       
       elif ident == EPODIdentifiers.eNodeAnimationFlags | EPODDefines.startTagMask:
         animation.flags = struct.unpack("<I", self.stream.read(4))[0]
       
       elif ident == EPODIdentifiers.eNodeAnimationPositionIndex | EPODDefines.startTagMask:
-        animation.positionIndices = np.frombuffer(self.stream.read(length), dtype=np.uint32)
+        animation.positionIndices = array.array('L', self.stream.read(length))
       
       elif ident == EPODIdentifiers.eNodeAnimationRotationIndex | EPODDefines.startTagMask:
-        animation.rotationIndices = np.frombuffer(self.stream.read(length), dtype=np.uint32)
+        animation.rotationIndices = array.array('L', self.stream.read(length))
       
       elif ident == EPODIdentifiers.eNodeAnimationScaleIndex | EPODDefines.startTagMask:
-        animation.scaleIndices = np.frombuffer(self.stream.read(length), dtype=np.uint32)
+        animation.scaleIndices = array.array('L', self.stream.read(length))
       
       elif ident == EPODIdentifiers.eNodeAnimationMatrixIndex | EPODDefines.startTagMask:
-        animation.matrixIndices = np.frombuffer(self.stream.read(length), dtype=np.uint32)
+        animation.matrixIndices = array.array('L', self.stream.read(length))
       
       elif ident == EPODIdentifiers.eNodeUserData | EPODDefines.startTagMask:
         node.userData = self.stream.read(length)
@@ -264,7 +222,7 @@ class PVRPODLoader:
         podUVWs = struct.unpack("<i", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eMeshStripLength | EPODDefines.startTagMask:
-        mesh.primitiveData["stripLengths"] = np.frombuffer(self.stream.read(length), dtype=np.uint32)
+        mesh.primitiveData["stripLengths"] = array.array('L', self.stream.read(length))
 
       elif ident == EPODIdentifiers.eMeshNumStrips | EPODDefines.startTagMask:
         mesh.primitiveData["numStrips"] = struct.unpack("<I", self.stream.read(4))[0]
@@ -273,13 +231,13 @@ class PVRPODLoader:
         mesh.AddData(self.stream.read(length))
 
       elif ident == EPODIdentifiers.eMeshBoneBatchIndexList | EPODDefines.startTagMask:
-        mesh.boneBatches["batches"] = np.frombuffer(self.stream.read(length), dtype=np.uint32)
+        mesh.boneBatches["batches"] = array.array('L', self.stream.read(length))
 
       elif ident == EPODIdentifiers.eMeshNumBoneIndicesPerBatch | EPODDefines.startTagMask:
-        mesh.boneBatches["boneCounts"] = np.frombuffer(self.stream.read(length), dtype=np.uint32)
+        mesh.boneBatches["boneCounts"] = array.array('L', self.stream.read(length))
 
       elif ident == EPODIdentifiers.eMeshBoneOffsetPerBatch | EPODDefines.startTagMask:
-        mesh.boneBatches["offsets"] = np.frombuffer(self.stream.read(length), dtype=np.uint32)
+        mesh.boneBatches["offsets"] = array.array('L', self.stream.read(length))
 
       elif ident == EPODIdentifiers.eMeshMaxNumBonesPerBatch | EPODDefines.startTagMask:
         mesh.boneBatches["boneMax"] = struct.unpack("<I", self.stream.read(4))[0]
@@ -288,10 +246,10 @@ class PVRPODLoader:
         mesh.boneBatches["count"] = struct.unpack("<I", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eMeshUnpackMatrix | EPODDefines.startTagMask:
-        mesh.unpackMatrix = np.frombuffer(self.stream.read(length), dtype=np.float32)
+        mesh.unpackMatrix = array.array('f', self.stream.read(length))
 
       elif ident == EPODIdentifiers.eMeshUnpackMatrix | EPODDefines.startTagMask:
-        mesh.unpackMatrix = np.frombuffer(self.stream.read(length), dtype=np.float32)
+        mesh.unpackMatrix = array.array('f', self.stream.read(length))
 
       elif ident == EPODIdentifiers.eMeshVertexIndexList | EPODDefines.startTagMask:
         (data, dataType) = self.ReadVertexIndexData()
@@ -333,7 +291,7 @@ class PVRPODLoader:
         return texture
 
       elif ident == EPODIdentifiers.eTextureFilename | EPODDefines.startTagMask:
-        texture.name = self.ReadString(length)
+        texture.setName(self.ReadString(length))
         
       # skip unkown blocks
       else:
@@ -357,13 +315,13 @@ class PVRPODLoader:
         material.opacity = struct.unpack("<f", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eMaterialAmbientColour | EPODDefines.startTagMask:
-        material.ambient = np.frombuffer(self.stream.read(12), dtype=np.float32)
+        material.ambient = array.array('f', self.stream.read(12))
         
       elif ident == EPODIdentifiers.eMaterialDiffuseColour | EPODDefines.startTagMask:
-        material.diffuse = np.frombuffer(self.stream.read(12), dtype=np.float32)
+        material.diffuse = array.array('f', self.stream.read(12))
 
       elif ident == EPODIdentifiers.eMaterialSpecularColour | EPODDefines.startTagMask:
-        material.specular = np.frombuffer(self.stream.read(12), dtype=np.float32)
+        material.specular = array.array('f', self.stream.read(12))
 
       elif ident == EPODIdentifiers.eMaterialShininess | EPODDefines.startTagMask:
         material.specular = struct.unpack("<f", self.stream.read(4))[0]
@@ -420,10 +378,10 @@ class PVRPODLoader:
         material.blendOpA = struct.unpack("<I", self.stream.read(4))[0]
 
       elif ident == EPODIdentifiers.eMaterialBlendingRGBAColour | EPODDefines.startTagMask:
-        material.blendColour = np.frombuffer(self.stream.read(length), dtype=np.float32)
+        material.blendColour = array.array('f', self.stream.read(length))
 
       elif ident == EPODIdentifiers.eMaterialBlendingFactorArray | EPODDefines.startTagMask:
-        material.blendFactor = np.frombuffer(self.stream.read(length), dtype=np.float32)
+        material.blendFactor =  array.array('f', self.stream.read(length))
 
       elif ident == EPODIdentifiers.eMaterialFlags | EPODDefines.startTagMask:
         material.flags = struct.unpack("<I", self.stream.read(4))[0]
@@ -457,9 +415,9 @@ class PVRPODLoader:
 
       elif ident == EPODIdentifiers.eBlockData | EPODDefines.startTagMask:
         if dataType == EPVRMesh.FaceData.e16Bit:
-          data = np.frombuffer(self.stream.read(length), dtype=np.uint16)
+          data = array.array('H', self.stream.read(length))
         elif dataType == EPVRMesh.FaceData.e32Bit:
-          data = np.frombuffer(self.stream.read(length), dtype=np.uint32)
+          data = array.array('L', self.stream.read(length))
       
       else:
         self.stream.seek(length, 1)

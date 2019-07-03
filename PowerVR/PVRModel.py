@@ -1,5 +1,4 @@
 from PowerVR.EPOD import *
-import numpy as np
 
 class PVRModel:
   def __init__(self):
@@ -35,22 +34,3 @@ class PVRModel:
     self.flags = 0
 
     self.cache = {}
-
-  def InitCache():
-    self.cache["worldMatrixFrameZero"] = []
-    self.cache["cachedFrame"] = []
-    self.cache["worldMatrixFrameN"] = []
-    self.cache["frame"] = 0
-    self.cache["frameFraction"] = 0.0
-    self.FlushCache()
-  
-  def FlushCache():
-    self.setCurrentFrame(0)
-    # for i in range(1, self.numNodes):
-    #   m = self.getWorldMatrixNoCache(i)
-    #   self.cache["worldMatrixFrameZero"][i] = m
-    #   self.cache["worldMatrixFrameN"][i] = m
-    #   self.cache["cachedFrame"][i] = 0.0
-  
-  def setCurrentFrame(frame):
-    pass
